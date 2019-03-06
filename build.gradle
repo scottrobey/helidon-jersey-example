@@ -1,0 +1,79 @@
+
+apply plugin: 'idea'
+apply plugin: 'java'
+
+group "org.robey.helidon"
+version "1.0"
+
+sourceCompatibility = 1.11
+targetCompatibility = 1.11
+tasks.withType(JavaCompile) {
+  options.encoding = 'UTF-8'
+  options.compilerArgs << '-parameters'
+}
+
+ext {
+  helidonversion = '1.0.0'
+}
+
+
+repositories {
+  mavenLocal()
+  mavenCentral()
+  jcenter()
+}
+
+dependencies {
+  compile "io.helidon.webserver:helidon-webserver:1.0.0"
+  compile "io.helidon.webserver:helidon-webserver-netty:0.10.5"
+
+  compile "io.helidon.webserver:helidon-webserver-jersey-bundle:0.9.1"
+
+  //compile "io.helidon:helidon-bom:${project.helidonversion}"
+  compile "io.helidon.microprofile.server:helidon-microprofile-server:1.0.0"
+//  compile 'io.helidon.microprofile.bundles:helidon-microprofile-1.2'
+  compile 'org.glassfish.jersey.media:jersey-media-json-binding:2.26'
+
+
+  compile 'org.glassfish.jersey.containers:jersey-container-servlet:2.28'
+  compile 'org.glassfish.jersey.media:jersey-media-json-jackson:2.28'
+
+  compile 'org.glassfish.jersey.media:jersey-media-multipart:2.28'
+  compile "org.glassfish.jersey.inject:jersey-hk2:2.28"
+
+  compile "org.glassfish.hk2:guice-bridge:2.5.0"
+
+
+  // needed for JDK11
+  compile 'javax.xml.bind:jaxb-api:2.2.11'
+  compile 'com.sun.xml.bind:jaxb-core:2.2.11'
+  compile 'com.sun.xml.bind:jaxb-impl:2.2.11'
+
+  //runtime 'javax.activation:javax.activation-api:1.2.0'
+  compile 'javax.activation:activation:1.1.1'
+
+}
+
+// define a custom task to copy all dependencies in the runtime classpath
+// into build/libs/libs
+// uses built-in Copy
+task copyLibs(type: Copy) {
+  from configurations.runtime
+  into 'build/libs/libs'
+}
+
+// add it as a dependency of built-in task 'assemble'
+copyLibs.dependsOn jar
+assemble.dependsOn copyLibs
+
+// default jar configuration
+// set the main classpath
+// add each jar under build/libs/libs into the classpath
+jar {
+  archiveName = "${project.name}.jar"
+  manifest {
+    attributes ('Main-Class': 'io.helidon.examples.quickstart.mp.Main',
+                'Class-Path': configurations.runtime.files.collect { "libs/$it.name" }.join(' ')
+    )
+  }
+}
